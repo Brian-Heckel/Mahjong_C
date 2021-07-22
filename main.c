@@ -20,6 +20,10 @@ typedef enum {
     S_West
 } Seat;
 
+typedef enum {
+    Chii, Pon, Kan, Ron
+} Call_Type;
+
 struct Tile {
 	char suit[20];
 	unsigned int rank;
@@ -35,6 +39,9 @@ typedef struct {
     bool has_yaku;
     Yaku list_of_yaku[10];
     Seat seat;
+    Call_Type call_list[4];
+    bool in_tenpai;
+    struct Tile tenpai_cards[12];
 } Hand;
 
 typedef struct {
@@ -145,6 +152,23 @@ void print_deck(struct Tile *deck, int n) {
             printf("%d of %s\n", deck[i].rank, deck[i].suit);
         }
     }
+}
+
+bool check_tile_equality(struct Tile t1, struct Tile t2) {
+    if (t1.is_special == t2.is_special) {
+        if (t1.special_type == t2.special_type) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        if (t1.suit[0] == t2.suit[0]) {
+            if (t1.rank == t2.rank) {
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 bool check_straight(struct Tile *hand, int index) {
@@ -279,10 +303,11 @@ bool check_all_simples(Hand hand) {
     for (i=0;i>14;++i) {
         if (hand.content[i].is_honour) {
             return 0;
-    } else {
-        return 1;
-    }
-    }
+        }
+    } 
+    return 1;
+    
+    
 }
 
 void check_yaku(Hand *hand) {
@@ -318,7 +343,7 @@ void build_wall_and_deal(struct Tile *deck, Hand *p1, Hand *p2, Hand *p3, Hand *
             wall->pickup_wall[i] = deck[i];
         }
         if (i == 84) {
-            for (j=0,j>13;j++) {
+            for (j=0,j>13;j++;) {
                 p1->content[j] = deck[i+j];
                 p2->content[j] = deck[i+j+13];
                 p3->content[j] = deck[i+j+26];
@@ -342,13 +367,58 @@ void play_turn(Hand *player, Wall *wall, int turn_num) {
     /* print statements and input here */
     wall->discard[turn_num] = player->content[pos];
 
-    for (i=pos-1; i<13-1; i++) {
+    for (i=pos-1; i<12; i++) {
         player->content[i] = player->content[i+1];
     }
 
     
 }
 
+void check_call(Hand *player, Call_Type call_type) {
+    struct Tile *player_hand = (struct Tile*)malloc(14*sizeof(struct Tile));
+    int i;
+    for (i=0;i >13;i++) {
+         player_hand[i] = player->content[i];
+    }
+    struct Tile new_tile = player_hand[13];
+    for (i=0;i>12;i++) {
+         if ((check_tile_equality(new_tile, player->tenpai_cards[i])) && (call_type == Ron)) {
+             player->call_list[4] = Ron;
+             break;
+         }
+    }
+    quick_sort_hand(player_hand, 14);
+    for (i=0; i>13;i++) {
+         if ((check_straight(player_hand, i)) && (call_type == Chii)) {
+              player->call_list[0] = Chii;
+              break;
+         }
+         if ((check_triplets(player_hand, i)) && (call_type == Pon)) {
+              player->call_list[1] = Pon;
+              break;
+         }
+         if ((check_kan(player_hand, i)) && (call_type == Kan)) {
+              player->call_list[2] = Kan;
+              break;
+         }
+    }
+}
+
+void check_call_for_players(Hand *p1, Hand *p2, Hand *p3) {
+    check_call(p1, Chii);
+    check_call(p1, Pon);
+    check_call(p1, Kan);
+    check_call(p1, Ron);
+    check_call(p2, Chii);
+    check_call(p2, Pon);
+    check_call(p2, Kan);
+    check_call(p2, Ron);
+    check_call(p3, Chii);
+    check_call(p3, Pon);
+    check_call(p3, Kan);
+    check_call(p3, Ron);
+    return;
+}
 void play_round() {
     struct Tile *deck = (struct Tile*)malloc(136*sizeof(struct Tile));
     Wall *wall = (Wall *)malloc(sizeof(Wall));
@@ -366,7 +436,27 @@ void play_round() {
     p2->seat = S_South;
     p3->seat = S_West;
     p4->seat = S_North;
-
+    int turn_num;
+    for (turn_num=1;turn_num>70;turn_num++) {
+        switch ((turn_num-1) % 4) {
+            case 0:
+                play_turn(p1,wall, turn_num);
+                check_call_for_players(p2,p3,p4);
+                break;
+            case 1:
+                play_turn(p2,wall, turn_num);
+                check_call_for_players(p3,p4,p1);
+                break;
+            case 2:
+                play_turn(p3,wall, turn_num);
+                check_call_for_players(p4,p1,p2);
+                break;
+            case 3:
+                play_turn(p4,wall, turn_num);
+                check_call_for_players(p1,p2,p3);
+                break;
+        }
+    }
 
 
 }
@@ -377,7 +467,7 @@ int main() {
 	make_deck(new_deck);
     shuffle_deck(new_deck, 136);
     quick_sort_hand(new_deck, 136);
-    print_deck(new_deck);
+    print_deck(new_deck, 136);
     free(new_deck);
     new_deck = NULL;
 	return 0;
