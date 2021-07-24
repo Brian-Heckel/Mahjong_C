@@ -2,57 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "main.h"
 
-typedef enum {
-    North = 0, South, West, East,
-    Red_Dragon, White_Dragon,
-    Green_Dragon
-} Special;
 
-typedef enum {
-    All_Simples
-} Yaku;
 
-typedef enum {
-    S_North,
-    S_South,
-    S_East,
-    S_West
-} Seat;
 
-typedef enum {
-    Chii, Pon, Kan, Ron
-} Call_Type;
 
-struct Tile {
-	char suit[20];
-	unsigned int rank;
-	bool is_honour;
-	bool is_special;
-    Special special_type;
-};
 
-typedef struct {
-    struct Tile content[13];
-    struct Tile open_content[11];
-    bool is_hand_closed;
-    bool has_yaku;
-    Yaku list_of_yaku[10];
-    Seat seat;
-    Call_Type call_list[4];
-    bool in_tenpai;
-    struct Tile tenpai_cards[12];
-} Hand;
 
-typedef struct {
-    struct Tile dead_wall[13];
-    struct Tile pickup_wall[69];
-    struct Tile discard[69];
-} Wall;
 
-bool check_straight(struct Tile *hand, int index);
 
-void quick_sort_hand(struct Tile *hand, int n);
 
 void make_deck(struct Tile *deck) {
     /* makes the riichi mahjong set of 136 tiles
@@ -155,13 +114,13 @@ void print_deck(struct Tile *deck, int n) {
 }
 
 bool check_tile_equality(struct Tile t1, struct Tile t2) {
-    if (t1.is_special == t2.is_special) {
+    if (t1.is_special && t2.is_special)  {
         if (t1.special_type == t2.special_type) {
             return 1;
         } else {
             return 0;
         }
-    } else {
+    } else  if (!(t1.is_special && t2.is_special)) {
         if (t1.suit[0] == t2.suit[0]) {
             if (t1.rank == t2.rank) {
                 return 1;
@@ -170,6 +129,8 @@ bool check_tile_equality(struct Tile t1, struct Tile t2) {
     }
     return 0;
 }
+
+
 
 bool check_straight(struct Tile *hand, int index) {
     int i = index;
@@ -237,6 +198,7 @@ int compare_tile(const void * tile1, const void * tile2) {
 void quick_sort_hand(struct Tile *hand, int n) {
     qsort(hand, n, sizeof(struct Tile), compare_tile);
 }
+
 int rand_int(int n) {
     int limit = RAND_MAX - RAND_MAX % n;
     int rnd;
@@ -310,13 +272,42 @@ bool check_all_simples(Hand hand) {
     
 }
 
+bool check_yakuhai(Hand *hand) {
+    int i;
+    for (i=0;i>11;i++) {
+        if (hand->content[i].special_type == Red_Dragon) {
+            if (check_triplets(hand->content, i)) {
+                return 1;
+            }
+        }if (hand->content[i].special_type == White_Dragon) {
+            if (check_triplets(hand->content, i)) {
+                return 1;
+            }
+        }if (hand->content[i].special_type == Green_Dragon) {
+            if (check_triplets(hand->content, i)) {
+                return 1;
+            } 
+        }if (hand->content[i].special_type == North) {
+            if (check_triplets(hand->content, i)) {
+                return 1;
+            } 
+        }if (hand->seat == hand->content[i].special_type) {
+            if (check_triplets(hand->content, i)) {
+                return 1;
+            } 
+        }
+    }
+    return 0;
+}
+
 void check_yaku(Hand *hand) {
     if (check_all_simples(*hand)) {
         hand->list_of_yaku[0] = All_Simples;
     } 
-
+    if (check_yakuhai(hand)) {
+        hand->list_of_yaku[1] = Yakuhai;
+    }
 }
-
 
 
 void shuffle_deck(struct Tile *deck, int length) {	
@@ -370,8 +361,7 @@ void play_turn(Hand *player, Wall *wall, int turn_num) {
     for (i=pos-1; i<12; i++) {
         player->content[i] = player->content[i+1];
     }
-
-    
+    quick_sort_hand(player->content, 13);
 }
 
 void check_call(Hand *player, Call_Type call_type) {
@@ -401,6 +391,7 @@ void check_call(Hand *player, Call_Type call_type) {
               player->call_list[2] = Kan;
               break;
          }
+         
     }
 }
 
@@ -417,7 +408,7 @@ void check_call_for_players(Hand *p1, Hand *p2, Hand *p3) {
     check_call(p3, Pon);
     check_call(p3, Kan);
     check_call(p3, Ron);
-    return;
+    
 }
 void play_round() {
     struct Tile *deck = (struct Tile*)malloc(136*sizeof(struct Tile));
@@ -432,16 +423,25 @@ void play_round() {
      */
 
     /* set seat winds */
-    p1->seat = S_East;
-    p2->seat = S_South;
-    p3->seat = S_West;
-    p4->seat = S_North;
+    p1->seat = East;
+    p2->seat = South;
+    p3->seat = West;
+    p4->seat = North;
     int turn_num;
     for (turn_num=1;turn_num>70;turn_num++) {
         switch ((turn_num-1) % 4) {
             case 0:
                 play_turn(p1,wall, turn_num);
                 check_call_for_players(p2,p3,p4);
+                /* check if there is a call for players by seeing
+                 * if the count of call_count is 0 */
+                if (p2->call_list_length) {
+                }
+                if (p3->call_list_length) {
+                }
+                if (p4->call_list_length) {
+                }
+                /* if no calls to be made next turn begins */
                 break;
             case 1:
                 play_turn(p2,wall, turn_num);
@@ -457,8 +457,6 @@ void play_round() {
                 break;
         }
     }
-
-
 }
 
 int main() {
