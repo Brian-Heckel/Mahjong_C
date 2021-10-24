@@ -1,0 +1,88 @@
+Create Shuffle_wall using fisher-yates algo -Done
+
+implement a quicksort for hands -Done
+
+implement functions for yaku
+    check_straight(struct Tile hand[], int index) -Done 
+    check_triple(struct Tile hand[], int index) -done Needs testing
+    check_kan(struct Tile hand[], int index) -done Needs testing
+    
+
+make a check_adjacent function
+    checks if a tile is +1 from another tile
+    if so returns true
+
+new class event
+    event.type = type of group
+    event.index1 = index of first tile of group
+    event.index2 = index of second tile of group
+    event.index3 = index of third tile of group
+    event.index4 = index of fourth tile of group
+function add_event(event* event_list, str type, i1, i2, i3, i4)
+    #takes a group and gives information about group and stores it in list
+    if type == Chii:
+        event.type = type
+
+event list is dynamic array
+
+checker for set
+    a set contains 4 straights/triplets/quads and a pair
+    for a hand of size n
+    find all pairs in hand and assign event to it
+    define count = 0:n-1 count++
+        define k = count:n k++
+            if check_pair(count, k):
+                add event(pair, count, k)
+    define i = 0:n-2 i++
+        j = i:n-1 j++
+            k = j:n k++
+            if check_adjacent(i,j):
+                if check_adjacent(j,k):
+                    add event (chii, i, j, k)
+            if check_pair(i, j):
+                if check_pair(j, k):
+                    add event(pon, i, j, k)
+    eventlist should have events in it
+    find all collisions in eventlist and record events in pairs
+    then take all permutations of one pair from pairlist and all sequences of events with no collisions
+    then see if the length of the sequence equals 5 if so then the hand is a set
+
+check_event_valid(*event, *eventlist)
+    event_indices[3] = [event->index1, event->index2, event->index3, event->index4]
+    initialize eventlist_indices[]
+    append each indice in eventlist
+    for i in 0:3;
+        for j in 0:eventlist_indices_len;
+            if event_indices[i] == eventlist_indices[j];
+                return false;
+    return true
+
+create yaku
+    -All simples -done
+    -Yakuhai -done but not sure if it can work for multiple yakuhai
+
+build dead wall and distribute hands to 4 players -Done
+
+implement count of hand lists
+
+make a checker for tenpai and add tiles to list of tenpai cards
+    to check tenpai
+        get hand(hand after discard)
+        make a copy of the hand
+            for each tile type 
+                if the tile gives the hand a yaku
+                    add tile to list of tenpai cards
+                    tenpai_cards += 1
+            if tenpai_cards_length > 0
+                hand in_tenpai = true
+                return;
+            return
+
+make variable for size of hand and change it based on if a kan happens
+
+
+Simulate Round
+
+build riichii mechanic and optionally make dora mechanic
+
+test

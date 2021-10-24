@@ -1,8 +1,12 @@
 #ifndef MAIN_HEADER
 #define MAIN_HEADER
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
 typedef enum {
-    North = 0, South, West, East,
+    North, South, West, East,
     Red_Dragon, White_Dragon,
     Green_Dragon
 } Special;
@@ -24,6 +28,9 @@ typedef enum {
     No_Call, Chii, Pon, Kan, Ron
 } Call_Type;
 
+typedef enum {
+    Pair, Triplet, Quad, Straight
+} Group_Type;
 
 struct Tile {
 	char suit[20];
@@ -34,7 +41,7 @@ struct Tile {
 };
 
 typedef struct {
-    struct Tile content[13];
+    struct Tile content[16];
     int content_length;
     struct Tile open_content[11];
     int open_content_length;
@@ -47,6 +54,7 @@ typedef struct {
     int call_list_length;
     bool in_tenpai;
     struct Tile tenpai_cards[12];
+    int tenpai_cards_length;
 } Hand;
 
 
@@ -56,6 +64,21 @@ typedef struct {
     struct Tile discard[69];
 } Wall;
 
+typedef struct {
+    Group_type group_type;
+    int index1;
+    int index2;
+    int index3;
+    int index4;
+} Event;
+
+typedef struct {
+    Event *list;
+    size_t used;
+    size_t size;
+} EventList;
+
+void print_tile(struct Tile *tile);
 
 bool check_straight(struct Tile *hand, int index);
 
@@ -68,6 +91,10 @@ void print_deck(struct Tile *deck, int n);
 
 bool check_tile_equality(struct Tile t1, struct Tile t2);
 
+void init_EventList(EventList *eventlist, size_t initial_size);
+void insert_event(EventList *eventlist, Event event); 
+void free_EventList(EventList *eventlist); 
+
 int compare_tile(const void * tile1, const void * tile2);
 
 bool check_straight(struct Tile *hand, int index);
@@ -76,13 +103,17 @@ void quick_sort_hand(struct Tile *hand, int n);
 
 int rand_int(int n);
 
+bool check_adjacent(struct Tile tile1, struct Tile tile2);
+
+int binary_search_hand(Hand *hand, struct Tile search_tile);
+
 bool check_pair(struct Tile *t1, struct Tile *t2);
 
 bool check_triplets(struct Tile *hand, int index);
 
 bool check_kan(struct Tile *hand, int index);
 
-bool check_all_simples(Hand hand);
+bool check_all_simples(Hand *hand);
 
 bool check_yakuhai(Hand *hand);
 
